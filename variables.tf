@@ -34,30 +34,6 @@ variable "app_count" {
   default     = 1
 }
 
-variable "task_cpu" {
-  description = "AWS ECS task definition cpu"
-  type        = number
-  default     = 1024
-}
-
-variable "task_mem" {
-  description = "AWS ECS task definition memory"
-  type        = number
-  default     = 512
-}
-
-variable "container_cpu" {
-  description = "AWS ECS container definition cpu"
-  type        = number
-  default     = 0
-}
-
-variable "container_mem" {
-  description = "AWS ECS container definition memory"
-  type        = number
-  default     = 256
-}
-
 variable "container_name" {
   description = "AWS ECS container definition memory"
   type        = string

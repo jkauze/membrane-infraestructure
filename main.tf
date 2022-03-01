@@ -104,7 +104,7 @@ resource "aws_instance" "membrane-ec2" {
   iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
   security_groups      = [aws_security_group.ecs_sg.name]
   instance_type        = "t2.micro"
-  count                = 1
+  count                = var.app_count
   user_data            = "#!/bin/bash\necho ECS_CLUSTER=membrane-cluster >> /etc/ecs/ecs.config"
   tags = {
     Name = "membraneContainerInstance"
