@@ -1,6 +1,20 @@
-######################################################################
-### ECS
-######################################################################
+terraform {
+  cloud {
+    organization = "jkauze"
+
+    workspaces {
+      name = "Lattice_Test"
+    }
+  }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 3.27"
+    }
+  }
+
+  required_version = ">= 0.14.9"
+}
 
 resource "aws_ecr_repository" "backend" {
   name = var.repository_name
@@ -28,13 +42,13 @@ resource "aws_ecs_task_definition" "task" {
     {
       name      = var.container_name
       image     = aws_ecr_repository.backend.repository_url
-      cpu       = 128
-      memory    = 256
+      cpu       = var.container_cpu
+      memory    = var.container_mem
       essential = true
       portMappings = [
         {
-          containerPort = 8080
-          hostPort      = 80
+          containerPort = var.container_port
+          hostPort      = var.host_port
         }
       ]
     }
@@ -59,54 +73,6 @@ resource "aws_iam_role" "task_role" {
   }
 }
 
-######################################################################
-### SECURITY & IAM
-######################################################################
-
-resource "aws_security_group" "ecs_sg" {
-  name = "ecs_sg"
-
-  ingress {
-    from_port   = "80"
-    to_port     = "80"
-    protocol    = "TCP"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_iam_role" "ecs_agent" {
-  name               = "ecs-agent"
-  assume_role_policy = data.aws_iam_policy_document.ecs_agent.json
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_agent" {
-  role       = aws_iam_role.ecs_agent.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceforEC2Role"
-}
-resource "aws_iam_instance_profile" "ecs_agent" {
-  name = "ecs-agent"
-  role = aws_iam_role.ecs_agent.name
-}
-
-######################################################################
-### Containter instance
-######################################################################
-
-resource "aws_instance" "membrane-ec2" {
-  ami                  = "ami-0a5e7c9183d1cea27"
-  iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
-  security_groups      = [aws_security_group.ecs_sg.name]
-  instance_type        = "t2.micro"
-  count                = var.app_count
-  user_data            = "#!/bin/bash\necho ECS_CLUSTER=membrane-cluster >> /etc/ecs/ecs.config"
-  tags = {
-    Name = "membraneContainerInstance"
-  }
+module "ec2_instance" {
+  source = "./modules/ec2"
 }
